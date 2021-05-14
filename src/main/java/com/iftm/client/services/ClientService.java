@@ -31,6 +31,12 @@ public class ClientService {
 	}
 	
 	@Transactional(readOnly = true)
+	public Page<ClientDTO> findByIncome(Double income, PageRequest pageRequest) {
+		Page<Client> list =  repository.findByIncome(income, pageRequest);
+		return list.map(x -> new ClientDTO(x));
+	}
+	
+	@Transactional(readOnly = true)
 	public ClientDTO findById(Long id) {
 		Optional<Client> obj = repository.findById(id);
 		Client entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));

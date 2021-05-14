@@ -11,6 +11,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.iftm.client.entities.Client;
 import com.iftm.client.repositories.ClientRepository;
+import com.iftm.client.tests.factory.ClientFactory;
 
 @DataJpaTest
 public class ClientRepositoryTests {
@@ -20,11 +21,13 @@ public class ClientRepositoryTests {
 	
 	private long existingId;
 	private long nonExistingId;
+	private long countTotalClients;
 	
 	@BeforeEach
 	void setUp() throws Exception {
 		existingId = 1L;
 		nonExistingId = 1000L;
+		countTotalClients = 12L;
 	}
 	
 	@Test
@@ -44,6 +47,21 @@ public class ClientRepositoryTests {
 			repository.deleteById(nonExistingId);
 		});
 		
+	}
+	
+	@Test
+	public void saveShouldPersistWithAutoIncrementWhenIdIsNull() {
+		
+		Client client = ClientFactory.createClient();
+		client.setId(null);
+		
+		client = repository.save(client);
+		Optional<Client> result = repository.findById(client.getId());
+		
+		Assertions.assertNotNull(client.getId());
+		Assertions.assertEquals(countTotalClients + 1, client.getId());
+		Assertions.assertTrue(result.isPresent());
+		Assertions.assertSame(result.get(), client);		
 	}
 
 }
