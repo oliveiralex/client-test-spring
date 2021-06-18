@@ -1,6 +1,8 @@
 package com.iftm.client.services;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
@@ -23,6 +25,12 @@ public class ClientService {
 	
 	@Autowired
 	private ClientRepository repository;
+	
+	@Transactional(readOnly = true)
+	public List<ClientDTO> findAll() {
+		List<Client> list = repository.findAll();
+		return list.stream().map(x -> new ClientDTO(x)).collect(Collectors.toList());
+	}
 	
 	@Transactional(readOnly = true)
 	public Page<ClientDTO> findAllPaged(PageRequest pageRequest) {
