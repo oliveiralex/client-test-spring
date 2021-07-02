@@ -1,6 +1,7 @@
 package com.iftm.client.resources;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -50,6 +51,12 @@ public class ClientResource {
 	{
 		PageRequest pageRequest = PageRequest.of(page, linesPerPage, Direction.valueOf(direction), orderBy);
 		Page<ClientDTO> list = service.findByIncome(income, pageRequest);
+		return ResponseEntity.ok().body(list);
+	}
+	
+	@GetMapping(value = "/findAll")
+	public ResponseEntity<List<ClientDTO>> findAll() {
+		List<ClientDTO> list = service.findAll();
 		return ResponseEntity.ok().body(list);
 	}
 	
