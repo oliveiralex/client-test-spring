@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iftm.client.dto.ClientDTO;
 import com.iftm.client.services.ClientService;
 import com.iftm.client.services.exceptions.DatabaseException;
@@ -40,10 +42,14 @@ public class ClientResourceTests {
 	@MockBean
 	private ClientService service;
 	
+	@Autowired
+	private ObjectMapper objectMapper;
+	
 	private Long existingId;
 	private Long nonExistingId;
 	private Long dependentId;
 	private ClientDTO clientDTO;
+	private ClientDTO newClientDTO;
 	private List<ClientDTO> list;
 	private PageImpl<ClientDTO> page;
 	
@@ -54,6 +60,7 @@ public class ClientResourceTests {
 		nonExistingId = 1000L;
 		dependentId = 4L;
 		clientDTO = ClientFactory.createClientDTO();
+		newClientDTO = ClientFactory.createClientDTO(null);
 		list = new ArrayList<ClientDTO>();
 		page = new PageImpl<>(List.of(clientDTO));
 		
@@ -71,6 +78,41 @@ public class ClientResourceTests {
 		doNothing().when(service).delete(existingId);
 		doThrow(ResourceNotFoundException.class).when(service).delete(nonExistingId);
 		doThrow(DatabaseException.class).when(service).delete(dependentId);
+	}
+	
+	@Test
+	public void updateShouldReturnClientDTOWhenIdExists() throws Exception {
+		
+		String jsonBody = objectMapper.writeValueAsString(newClientDTO);
+		
+		String expectedName = newClientDTO.getName();
+		Double expectedIncome = newClientDTO.getIncome();
+		
+		ResultActions result = 
+				mockMvc.perform(put("/clients/{id}", existingId)
+					.content(jsonBody)
+					.contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON));
+		
+		result.andExpect(status().isOk());
+		result.andExpect(jsonPath("$.id").exists());
+		result.andExpect(jsonPath("$.id").value(existingId));
+		result.andExpect(jsonPath("$.name").value(expectedName));
+		result.andExpect(jsonPath("$.income").value(expectedIncome));
+	}
+	
+	@Test
+	public void updateShouldReturnNotFoundWhenIdDoesNotExist() throws Exception {
+
+		String jsonBody = objectMapper.writeValueAsString(newClientDTO);
+		
+		ResultActions result = 
+				mockMvc.perform(put("/clients/{id}", nonExistingId)
+					.content(jsonBody)
+					.contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON));
+		
+		result.andExpect(status().isNotFound());		
 	}
 	
 	@Test
@@ -96,11 +138,6 @@ public class ClientResourceTests {
 	
 	@Test
 	public void findByIdShouldReturnClientWhenIdExists() throws Exception {
-		/*
-		mockMvc.perform(get("/clients/{id}", existingId)
-			.accept(MediaType.APPLICATION_JSON))
-			.andExpect(status().isOk());
-		*/
 		
 		ResultActions result = 
 		mockMvc.perform(get("/clients/{id}", existingId)
